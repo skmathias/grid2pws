@@ -1,0 +1,8 @@
+## Interface: 80000
+## Author: Unyielding
+## Title: Grid2 |cd1ff7d0aPWS|r
+
+## Dependencies: Grid2
+
+lib\ChatThrottleLib\ChatThrottleLib.xml
+Grid2PWS.lua
