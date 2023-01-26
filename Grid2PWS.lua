@@ -19,7 +19,8 @@ local ROSTER_UPDATE_EVENT = setmetatable( {
 	"ENCOUNTER_END", 
 	"GROUP_JOINED", 
 	"GROUP_FORMED", 
-	"READY_CHECK"
+	"READY_CHECK",
+	"PLAYER_TALENT_UPDATE"
 }, {__index = function() return 0 end} )
 local PWS_SKILL_POWER = {
 	[48066] = 2230, [48065] = 1951, [25218] = 1286, [25217] = 1144, [10901] = 964, [10900] = 783, 
