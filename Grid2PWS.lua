@@ -12,8 +12,14 @@ local contains = tContains
 
 
 local ROSTER_UPDATE_EVENT = setmetatable( { 
-	"GROUP_ROSTER_UPDATE", "RAID_ROSTER_UPDATE", "PLAYER_ENTERING_WORLD", "PLAYER_UNGHOST", 
-	"ENCOUNTER_END", "GROUP_JOINED", "GROUP_FORMED", "READY_CHECK"
+	"GROUP_ROSTER_UPDATE", 
+	"RAID_ROSTER_UPDATE", 
+	"PLAYER_ENTERING_WORLD", 
+	"PLAYER_UNGHOST", 
+	"ENCOUNTER_END", 
+	"GROUP_JOINED", 
+	"GROUP_FORMED", 
+	"READY_CHECK"
 }, {__index = function() return 0 end} )
 local PWS_SKILL_POWER = {
 	[48066] = 2230, [48065] = 1951, [25218] = 1286, [25217] = 1144, [10901] = 964, [10900] = 783, 
@@ -166,19 +172,22 @@ do
 		-- Subtract abosrb values on physical of spell damage
 		if (subEvent == "SPELL_ABSORBED") then
 			local meleeSpellName, _, _, extraSpellName, _, spellAmount = select(17, ...)
+			-- If none of the absorbs come from PWS, dont subtract (IE Divine Aegis, ...)
 			if (meleeSpellName ~= "Power Word: Shield" and extraSpellName ~= "Power Word: Shield") then return end
 			SubtractAbsorb(player, spellAmount ~= nil and spellAmount or amount)
 			return
 		end
 		
+		if (PWS_SKILL_POWER[spellId] == nil) then return end
+		
 		-- Reset absorb values when spell drops off
-		if (subEvent == "SPELL_AURA_REMOVED") and PWS_SKILL_POWER[spellId] ~= nil then
+		if (subEvent == "SPELL_AURA_REMOVED") then
 			RemoveAbsorb(player)
 			return
 		end
 		
 		-- Add absorb values when YOU cast a shield
-		if (subEvent == "SPELL_CAST_SUCCESS" and sourceName == UnitName("PLAYER") and PWS_SKILL_POWER[spellId] ~= nil) then
+		if ((subEvent == "SPELL_CAST_SUCCESS" or subEvent == "SPELL_AURA_APPLIED" or subEvent == "SPELL_AURA_REFRESH") and sourceName == UnitName("PLAYER")) then
 			AddAbsorbLocal(player, destName, spellId)
 		end
 	end
