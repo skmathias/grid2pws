@@ -141,6 +141,7 @@ do
 		local inParty = UnitInParty("player")
 		local pLen = inRaid and 40 or 4
 		currentRoster = {}
+		cache_talent = {}
 		
 		if inRaid or inParty then
 			addonMessageDist = inRaid and "RAID" or "PARTY"
@@ -150,6 +151,10 @@ do
 				local unitName = UnitName(pId, false)
 				if unitName ~= nil then
 					currentRoster[unitName] = pId
+					if (cache_absorb[unitName] ~= nil) then
+						cache_absorb[unitName].max = 0
+						cache_absorb[unitName].current = 0
+					end
 				end
 			end
 			
