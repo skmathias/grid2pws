@@ -1,8 +1,11 @@
 local PWSAbsorb = Grid2.statusPrototype:new("pws-absorb", false)
 
 local Grid2 = Grid2
+local Grid2Options = Grid2Options
 local UnitInRaid = UnitInRaid
 local UnitInParty = UnitInParty
+local UnitHealth = UnitHealth
+local UnitHealthMax = UnitHealthMax
 local GetSpellBonusHealing = GetSpellBonusHealing
 local GetTalentInfo = GetTalentInfo
 local UnitName = UnitName
@@ -10,7 +13,7 @@ local select = select
 local fmt = string.format
 local contains = tContains
 
-
+local RELATIVE_PERCENT = true
 local ROSTER_UPDATE_EVENT = setmetatable( { 
 	"GROUP_ROSTER_UPDATE", 
 	"RAID_ROSTER_UPDATE", 
@@ -239,6 +242,10 @@ do
 	end
 	
 	function PWSGetPercent(_,unit)
+		if (PWSAbsorb.dbx.relativePercent) then
+			local h = UnitHealthMax(unit)
+			return cache_absorb[unit].current / h
+		end
 		return cache_absorb[unit].current / cache_absorb[unit].max
 	end
 	
@@ -264,3 +271,28 @@ Grid2.setupFunc["pws-absorb"] = function(baseKey, dbx)
 end
 
 Grid2:DbSetStatusDefaultValue("pws-absorb", {type = "pws-absorb", color1 = {r=1,g=1,b=1,a=1}})
+
+local prev_LoadOptions = Grid2.LoadOptions
+function Grid2:LoadOptions()
+    Grid2Options:RegisterStatusOptions("pws-absorb", "misc", function(self, status, options)
+		self:MakeStatusColorOptions(status, options, optionParams)
+        options.relativePercent = {
+			type  = "toggle",
+			order = 10,
+			width = "full",
+			name  = "Relative percentage",
+			desc  = "Calculate shield percentage against unit max health",
+			get   = function ()	return status.dbx.relativePercent end,
+			set   = function (_, v)
+				status.dbx.relativePercent = v or nil
+				status:UpdateDB()
+				status:UpdateAllUnits()
+			end,
+		}
+    end, 
+    {
+        titleIcon = "Interface\\Icons\\Spell_holy_powerwordshield",
+    })
+
+    prev_LoadOptions(self)
+end
