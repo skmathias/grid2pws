@@ -180,9 +180,11 @@ do
 		
 		-- Subtract abosrb values on physical of spell damage
 		if (subEvent == "SPELL_ABSORBED") then
-			local meleeSpellName, _, _, extraSpellName, _, spellAmount = select(17, ...)
+			local meleeSpellId, meleeSpellName, _, extraSpellId, extraSpellName, _, spellAmount = select(16, ...)
 			-- If none of the absorbs come from PWS, dont subtract (IE Divine Aegis, ...)
-			if (meleeSpellName ~= "Power Word: Shield" and extraSpellName ~= "Power Word: Shield") then return end
+			local rSpellId = (meleeSpellId ~= UnitName("PLAYER")) and meleeSpellId or extraSpellId
+			if (PWS_SKILL_POWER[rSpellId] == nil) then return end
+			
 			SubtractAbsorb(player, spellAmount ~= nil and spellAmount or amount)
 			return
 		end
