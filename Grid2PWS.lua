@@ -1,7 +1,7 @@
 local PWSAbsorb = Grid2.statusPrototype:new("pws-absorb", false)
 
 local Grid2 = Grid2
-local Grid2Options = Grid2Options
+--local Grid2Options = Grid2Options
 local UnitInRaid = UnitInRaid
 local UnitInParty = UnitInParty
 local UnitHealth = UnitHealth
