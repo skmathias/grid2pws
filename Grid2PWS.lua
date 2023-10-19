@@ -8,7 +8,8 @@ local UnitHealth = UnitHealth
 local UnitHealthMax = UnitHealthMax
 local GetSpellBonusHealing = GetSpellBonusHealing
 local GetTalentInfo = GetTalentInfo
-local UnitName = UnitName
+local UnitName = UnitFullName
+local UnitGUID = UnitGUID
 local select = select
 local fmt = string.format
 local contains = tContains
@@ -97,25 +98,25 @@ do
 	----------------------------------------------------
 	-- Add absorb to unit
 	----------------------------------------------------
-	local function AddAbsorb(caster, playerName, amount)
-		local player = currentRoster[playerName]
+	local function AddAbsorb(casterGUID, playerGUID, amount)
+		local player = currentRoster[playerGUID]
 		
 		cache_absorb[player] = {
 			["max"] = amount,
 			["current"] = amount,
-			["caster"] = caster,
-			["name"] = playerName
+			["caster"] = casterGUID,
+			["name"] = playerGUID
 		}
 		
 		PWSAbsorb:UpdateIndicators(player)
 	end
 	
-	local function AddAbsorbLocal(player, playerName, spellId)
+	local function AddAbsorbLocal(playerGUID, spellId)
 		local maxAbsorb = GetMaxAbsorb(spellId) 
-		local addonMessage = ("A"..":"..UnitName("player")..":"..playerName..":"..maxAbsorb);
+		local addonMessage = ("A"..":"..UnitGUID("player")..":"..playerGUID..":"..maxAbsorb);
 		SendMessage(addonMessage, addonMessageDist);
 		
-		AddAbsorb(UnitName("player"), playerName, maxAbsorb)
+		AddAbsorb(UnitGUID("player"), playerGUID, maxAbsorb)
 	end
 	
 	----------------------------------------------------
@@ -152,12 +153,12 @@ do
 		
 			for i=1,pLen do 
 				local pId = inRaid and ("raid"..i) or ("party"..i)
-				local unitName = UnitName(pId, false)
-				if unitName ~= nil then
-					currentRoster[unitName] = pId
-					if (cache_absorb[unitName] ~= nil) then
-						cache_absorb[unitName].max = 0
-						cache_absorb[unitName].current = 0
+				local guid = UnitGUID(pId)
+				if guid ~= nil then
+					currentRoster[guid] = pId
+					if (cache_absorb[pId] ~= nil) then
+						cache_absorb[pId].max = 0
+						cache_absorb[pId].current = 0
 					end
 				end
 			end
@@ -165,7 +166,7 @@ do
 			if inRaid then return end
 		end
 		
-		currentRoster[UnitName("player")] = "player"
+		currentRoster[UnitGUID("player")] = "player"
 	end
 		
 	----------------------------------------------------
@@ -173,16 +174,16 @@ do
 	----------------------------------------------------
 	local function COMBAT_LOG_EVENT_UNFILTERED_HANDLER(...)
 		local timestamp, subEvent, _, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, spellId, spellName, _, _, _, _, _, amount = ...
-		local player = currentRoster[destName]
+		local player = currentRoster[destGUID]
 		
 		-- Make sure current player is in roster
 		if player == nil then return end
 		
 		-- Subtract abosrb values on physical of spell damage
 		if (subEvent == "SPELL_ABSORBED") then
-			local meleeSpellId, meleeSpellName, _, extraSpellId, extraSpellName, _, spellAmount = select(16, ...)
+			local casterGUID, meleeSpellId, meleeSpellName, _, extraSpellId, extraSpellName, _, spellAmount = select(15, ...)
 			-- If none of the absorbs come from PWS, dont subtract (IE Divine Aegis, ...)
-			local rSpellId = (meleeSpellId ~= UnitName("PLAYER")) and meleeSpellId or extraSpellId
+			local rSpellId = (casterGUID ~= UnitGUID("PLAYER")) and meleeSpellId or extraSpellId
 			if (PWS_SKILL_POWER[rSpellId] == nil) then return end
 			
 			SubtractAbsorb(player, spellAmount ~= nil and spellAmount or amount)
@@ -198,8 +199,8 @@ do
 		end
 		
 		-- Add absorb values when YOU cast a shield
-		if ((subEvent == "SPELL_CAST_SUCCESS" or subEvent == "SPELL_AURA_APPLIED" or subEvent == "SPELL_AURA_REFRESH") and sourceName == UnitName("PLAYER")) then
-			AddAbsorbLocal(player, destName, spellId)
+		if ((subEvent == "SPELL_CAST_SUCCESS" or subEvent == "SPELL_AURA_APPLIED" or subEvent == "SPELL_AURA_REFRESH") and sourceGUID == UnitGUID("PLAYER")) then
+			AddAbsorbLocal(destGUID, spellId)
 		end
 	end
 	
@@ -214,7 +215,7 @@ do
 		if (prefix ~= COMM_PREFIX) then return end
 		local event, caster, target, amount = strsplit(":", message)
 		
-		if (caster == UnitName("player")) then return end
+		if (caster == UnitGUID("player")) then return end
 		if (event == "A") then
 			AddAbsorb(caster, target, tonumber(amount))
 		end
