@@ -161,6 +161,16 @@ do
 						cache_absorb[pId].current = 0
 					end
 				end
+				
+				pId = inRaid and ("raidpet"..i) or ("partypet"..i)
+				guid = UnitGUID(pId)
+				if guid ~= nil then
+					currentRoster[guid] = pId
+					if (cache_absorb[pId] ~= nil) then
+						cache_absorb[pId].max = 0
+						cache_absorb[pId].current = 0
+					end
+				end
 			end
 			
 			if inRaid then return end
