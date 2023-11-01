@@ -23,7 +23,6 @@ local ROSTER_UPDATE_EVENT = setmetatable( {
 	"ENCOUNTER_END", 
 	"GROUP_JOINED", 
 	"GROUP_FORMED", 
-	"READY_CHECK",
 	"PLAYER_TALENT_UPDATE"
 }, {__index = function() return 0 end} )
 local PWS_SKILL_POWER = {
@@ -87,11 +86,16 @@ do
 	end
 	
 	local function GetMaxAbsorb(spellId)
+		local setMulti = 1
+		if (PWSAbsorb.dbx.t10Bonus) then
+			setMulti = 1.05
+		end
 		return math.floor(
 			(PWS_SKILL_POWER[spellId] + GetSpellBonusHealing(2) * (0.8068 + (GetTalentMultiplier(1,14) > 0 and 0.4 or 0.0))) * 
 			(1 + GetTalentMultiplier(1,5) * 0.05) * 
 			(1 + GetTalentMultiplier(1, 25) * 0.01) * 
-			(1 + GetTalentMultiplier(1, 16) * 0.02)
+			(1 + GetTalentMultiplier(1, 16) * 0.02) *
+			setMulti
 		)
 	end
 	
@@ -178,6 +182,28 @@ do
 		
 		currentRoster[UnitGUID("player")] = "player"
 	end
+	
+	--local function UPDATE_PET(...) 
+	--	local inRaid = UnitInRaid("player") ~= nil
+	--	local inParty = UnitInParty("player")
+	--	local pLen = inRaid and 40 or 4
+	--	
+	--	if inRaid or inParty then
+	--		addonMessageDist = inRaid and "RAID" or "PARTY"
+	--	
+	--		for i=1,pLen do 
+	--			local pId = inRaid and ("raidpet"..i) or ("partypet"..i)
+	--			local guid = UnitGUID(pId)
+	--			if guid ~= nil and currentRoster[guid] ~= nil then
+	--				currentRoster[guid] = pId
+	--				if (cache_absorb[pId] ~= nil) then
+	--					cache_absorb[pId].max = 0
+	--					cache_absorb[pId].current = 0
+	--				end
+	--			end
+	--		end
+	--	end
+	--end
 		
 	----------------------------------------------------
 	-- Tracking combat events for current roster (solo, party, raid)
@@ -185,6 +211,7 @@ do
 	local function COMBAT_LOG_EVENT_UNFILTERED_HANDLER(...)
 		local timestamp, subEvent, _, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, spellId, spellName, _, _, _, _, _, amount = ...
 		local player = currentRoster[destGUID]
+		local sourcePlayer = currentRoster[sourceGUID]
 		
 		-- Make sure current player is in roster
 		if player == nil then return end
@@ -238,6 +265,7 @@ do
 		for k,v in pairs(ROSTER_UPDATE_EVENT) do
 			RegisterEvent(v, UPDATE_ACTIVE_ROSTER_LISTENER)
 		end
+		--RegisterEvent("UNIT_PET", UPDATE_PET)
 		RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", COMBAT_LOG_EVENT_UNFILTERED_LISTENER)
 		RegisterEvent("CHAT_MSG_ADDON", ADDON_MESSAGE_HANDLER)
 	end
@@ -298,6 +326,19 @@ function Grid2:LoadOptions()
 			get   = function ()	return status.dbx.relativePercent end,
 			set   = function (_, v)
 				status.dbx.relativePercent = v or nil
+				status:UpdateDB()
+				status:UpdateAllUnits()
+			end,
+		}
+		options.t10Bonus = {
+			type  = "toggle",
+			order = 10,
+			width = "full",
+			name  = "T10 Bonus",
+			desc  = "Do you have T10 4set bonus?",
+			get   = function ()	return status.dbx.t10Bonus end,
+			set   = function (_, v)
+				status.dbx.t10Bonus = v or nil
 				status:UpdateDB()
 				status:UpdateAllUnits()
 			end,
