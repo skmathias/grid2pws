@@ -26,8 +26,20 @@ local ROSTER_UPDATE_EVENT = setmetatable( {
 	"PLAYER_TALENT_UPDATE"
 }, {__index = function() return 0 end} )
 local PWS_SKILL_POWER = {
-	[48066] = 2230, [48065] = 1951, [25218] = 1286, [25217] = 1144, [10901] = 964, [10900] = 783, 
-	[10899] = 622, [10898] = 499, [6066] = 394, [6065] = 313, [3747] = 244, [600] = 166, [17] = 48	
+	[48066] = { base = 2230, multi = 1 }, 
+	[48065] = { base = 1951, multi = 1 }, 
+	[25218] = { base = 1286, multi = 0.8 },
+	[25217] = { base = 1144, multi = 0.55 }, 
+	[10901] = { base = 964, multi = 0.35 }, 
+	[10900] = { base = 783, multi = 0.05 }, 
+	[10899] = { base = 622, multi = 0 }, 
+	[10898] = { base = 499, multi = 0 }, 
+	[6066] = { base = 394, multi = 0 }, 
+	[6065] = { base = 313, multi = 0 }, 
+	[3747] = { base = 244, multi = 0 }, 
+	[600] = { base = 166, multi = 0 },
+	[592] = { base = 94, multi = 0 },
+	[17] = { base = 48, multi = 0 }	
 }
 
 local COMM_PREFIX = "G2PWS"
@@ -90,11 +102,19 @@ do
 		if (PWSAbsorb.dbx.t10Bonus) then
 			setMulti = 1.05
 		end
+		
+		local SP = GetSpellBonusHealing(2)
+		local BT = GetTalentMultiplier(1, 14) * 0.08
+		local TD = GetTalentMultiplier(1, 25) * 0.01
+		local FP = GetTalentMultiplier(1, 16) * 0.02
+		local IPW = GetTalentMultiplier(1, 5) * 0.05
+		local SH = GetTalentMultiplier(2, 5) * 0.02
+		local spell = PWS_SKILL_POWER[spellId]
+		
 		return math.floor(
-			(PWS_SKILL_POWER[spellId] + GetSpellBonusHealing(2) * (0.8068 + (GetTalentMultiplier(1,14) > 0 and 0.4 or 0.0))) * 
-			(1 + GetTalentMultiplier(1,5) * 0.05) * 
-			(1 + GetTalentMultiplier(1, 25) * 0.01) * 
-			(1 + GetTalentMultiplier(1, 16) * 0.02) *
+			(spell.base + ((0.8068 + BT) * spell.multi) * SP) *
+			(1 + IPW) *
+			(1 + FP + TD + SH) *
 			setMulti
 		)
 	end
